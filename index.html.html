@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabaran Ketiga: Misi Memburu Ikan!</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Short+Stack&family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            user-select: none;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+        }
+        .font-title {
+            font-family: 'Fredoka One', cursive;
+        }
+        .font-hand {
+            font-family: 'Short Stack', cursive;
+        }
+
+        /* Waves Animation */
+        @keyframes waveMove {
+            0% { transform: translateX(0) translateZ(0) scaleY(1); }
+            50% { transform: translateX(-25%) translateZ(0) scaleY(1.05); }
+            100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+        }
+        .wave {
+            animation: waveMove 8s linear infinite;
+        }
+        .wave-slow {
+            animation: waveMove 14s linear infinite;
+        }
+
+        /* Ship Bobbing Animation */
+        @keyframes shipBob {
+            0%, 100% { transform: translateY(0px) rotate(-1.5deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .ship-anim {
+            animation: shipBob 3.5s ease-in-out infinite;
+        }
+
+        /* Fishing Line Drop Animation */
+        @keyframes castLine {
+            0% { stroke-dashoffset: 1000; }
+            100% { stroke-dashoffset: 0; }
+        }
+        .line-cast {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: castLine 1s forwards ease-out;
+        }
+
+        /* Catch Pop Popup Animation */
+        @keyframes catchPop {
+            0% { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+            80% { transform: scale(0.95) rotate(-2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-catch {
+            animation: catchPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Shaking animation for wrong answer */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Parchment Map Texture Box */
+        .parchment {
+            background: #fdf6e2;
+            background-image: radial-gradient(#e5c898 1.2px, transparent 0);
+            background-size: 20px 20px;
+            border: 6px solid #78350f;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5), inset 0 0 40px rgba(120,53,15,0.25);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1b4b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between relative select-none">
+
+    <!-- SKY & SUN BACKGROUND -->
+    <div class="fixed inset-0 bg-gradient-to-b from-sky-400 via-sky-300 to-amber-100 z-0 pointer-events-none">
+        <div class="absolute top-6 left-10 opacity-80">
+            <svg width="110" height="50" viewBox="0 0 100 50" fill="white"><path d="M10 40 Q20 20 35 30 Q50 10 70 25 Q85 15 90 40 Z"/></svg>
+        </div>
+        <div class="absolute top-12 right-20 opacity-70">
+            <svg width="150" height="70" viewBox="0 0 100 50" fill="white"><path d="M10 40 Q20 20 35 30 Q50 10 70 25 Q85 15 90 40 Z"/></svg>
+        </div>
+        <div class="absolute top-5 right-8 w-24 h-24 bg-amber-300 rounded-full blur-md opacity-90 animate-pulse"></div>
+    </div>
+
+    <!-- AUDIO CONTROLS HEADER -->
+    <div class="fixed top-3 right-3 z-50">
+        <button id="bgmToggleBtn" onclick="toggleBGM()" class="bg-amber-900/90 hover:bg-amber-800 text-amber-100 border-2 border-amber-400 px-3.5 py-2 rounded-2xl font-bold shadow-xl flex items-center gap-2 transition transform active:scale-95 cursor-pointer">
+            <i id="bgmIcon" class="fas fa-volume-mute text-amber-300"></i>
+            <span id="bgmText" class="text-xs sm:text-sm font-title">Muzik Lanun: BISU</span>
+        </button>
+    </div>
+
+    <header class="relative z-20 w-full p-3 sm:p-4 flex justify-between items-center max-w-4xl mx-auto">
+        <div class="flex items-center gap-2 bg-amber-950/90 border-2 border-amber-500 text-amber-200 px-4 py-2 rounded-2xl shadow-xl">
+            <i class="fas fa-skull-crossbones text-yellow-400 text-lg sm:text-xl"></i>
+            <span class="font-title text-xs sm:text-sm tracking-wider">Lanun Upin & Ipin</span>
+        </div>
+
+        <div class="bg-gradient-to-r from-amber-600 to-amber-800 border-2 border-yellow-300 text-white px-4 sm:px-5 py-2 rounded-2xl shadow-2xl flex items-center gap-3">
+            <div class="bg-yellow-400 text-amber-950 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center font-black shadow-inner">
+                <i class="fas fa-fish text-lg sm:text-xl text-amber-900"></i>
+            </div>
+            <div>
+                <div class="text-[9px] sm:text-[10px] uppercase tracking-widest text-amber-200 font-bold">Tangkapan</div>
+                <div class="font-title text-base sm:text-2xl text-yellow-300 leading-none">
+                    <span id="fishCount">0</span> / 5 Ikan
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="relative z-20 flex-1 flex flex-col items-center justify-center p-3 sm:p-4 max-w-4xl w-full mx-auto">
+
+        <!-- 1. START SCREEN -->
+        <div id="startScreen" class="w-full flex flex-col items-center text-center space-y-5 my-auto">
+            <div class="relative bg-gradient-to-b from-amber-900 via-amber-950 to-amber-900 border-4 border-yellow-500 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-2xl w-full text-white transform transition">
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-amber-950 px-6 py-1 rounded-full font-title text-xs sm:text-sm uppercase tracking-widest shadow-lg border-2 border-amber-900">
+                    Cabaran Ketiga
+                </div>
+
+                <h1 class="font-title text-3xl sm:text-5xl text-yellow-300 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] my-3 tracking-wide">
+                    MISI MEMBURU IKAN! 🎣
+                </h1>
+
+                <p class="text-amber-100 font-medium text-xs sm:text-base mb-5 leading-relaxed">
+                    Alamak! Upin, Ipin dan rakan-rakan kelaparan dan bekalan makanan semakin berkurangan! Bantu lanun cilik memancing ikan dengan menjawab soalan <span class="text-yellow-300 font-bold underline">Kata Ganti Nama Diri</span> dengan betul!
+                </p>
+
+                <!-- Hero Graphic Illustration -->
+                <div class="relative w-full h-44 sm:h-60 bg-sky-700 rounded-2xl border-2 border-amber-500 overflow-hidden flex items-center justify-center mb-5 shadow-inner">
+                    <svg class="absolute inset-0 w-full h-full object-cover" viewBox="0 0 500 250">
+                        <defs>
+                            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#38bdf8"/>
+                                <stop offset="100%" stop-color="#bae6fd"/>
+                            </linearGradient>
+                            <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0284c7"/>
+                                <stop offset="100%" stop-color="#0369a1"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="500" height="170" fill="url(#skyGrad)"/>
+                        <rect y="170" width="500" height="80" fill="url(#seaGrad)"/>
+
+                        <!-- Pirate Ship Base -->
+                        <path d="M 100 160 L 400 160 L 350 215 L 150 215 Z" fill="#78350f" stroke="#451a03" stroke-width="4"/>
+                        <rect x="245" y="40" width="10" height="120" fill="#451a03"/>
+                        <path d="M 255 50 Q 330 80 255 130 Z" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+                        <circle cx="275" cy="90" r="14" fill="#18181b"/>
+                        <path d="M 268 83 L 282 97 M 282 83 L 268 97" stroke="#ffffff" stroke-width="3"/>
+
+                        <!-- Upin Pirate -->
+                        <g transform="translate(180, 110)">
+                            <circle cx="20" cy="20" r="16" fill="#fbcfe8"/>
+                            <path d="M 4 18 Q 20 2 36 18 Z" fill="#dc2626"/>
+                            <circle cx="34" cy="22" r="4" fill="#dc2626"/>
+                            <circle cx="15" cy="20" r="3.5" fill="#18181b"/>
+                            <path d="M 18 26 Q 22 30 26 26" stroke="#881337" stroke-width="2" fill="none"/>
+                            <path d="M 10 36 L 30 36 L 34 50 L 6 50 Z" fill="#dc2626"/>
+                        </g>
+
+                        <!-- Ipin Pirate Fishing -->
+                        <g transform="translate(280, 110)">
+                            <circle cx="20" cy="20" r="16" fill="#fbcfe8"/>
+                            <path d="M -2 14 Q 20 -6 42 14 Z" fill="#18181b"/>
+                            <circle cx="15" cy="20" r="2.5" fill="#18181b"/>
+                            <circle cx="25" cy="20" r="2.5" fill="#18181b"/>
+                            <path d="M 15 25 Q 20 30 25 25" stroke="#881337" stroke-width="2" fill="none"/>
+                            <path d="M 10 36 L 30 36 L 34 50 L 6 50 Z" fill="#0284c7"/>
+                            <!-- Fishing Rod -->
+                            <path d="M 28 38 L 85 -15" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M 85 -15 Q 115 50 115 120" stroke="#ffffff" stroke-width="2" stroke-dasharray="4,4" fill="none"/>
+                        </g>
+
+                        <!-- Waves Overlay -->
+                        <path d="M 0 185 Q 60 170 120 185 T 240 185 T 360 185 T 480 185 L 500 250 L 0 250 Z" fill="#0284c7" opacity="0.8"/>
+                    </svg>
+
+                    <div class="absolute bottom-2 right-3 bg-amber-950/90 text-yellow-300 text-[11px] px-3 py-1 rounded-full border border-amber-500 font-bold shadow">
+                        <i class="fas fa-anchor mr-1"></i> Kapal Lanun Kampung Durian Runtuh
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="group relative inline-flex items-center justify-center px-8 py-3.5 font-title text-lg sm:text-2xl text-amber-950 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all border-4 border-yellow-200 cursor-pointer">
+                    <i class="fas fa-play text-xl sm:text-2xl mr-3 group-hover:rotate-12 transition transform"></i>
+                    MULAKAN MEMBURU IKAN!
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. GAMEPLAY STAGE -->
+        <div id="gameplayScreen" class="w-full hidden flex-col items-center">
+
+            <!-- Fishing Stage Visual -->
+            <div id="fishingStage" class="relative w-full h-48 sm:h-56 bg-gradient-to-b from-sky-400 to-sky-200 rounded-3xl border-4 border-amber-900 shadow-2xl overflow-hidden mb-4">
+
+                <div class="absolute top-3 left-8 opacity-70">
+                    <i class="fas fa-cloud text-white text-3xl"></i>
+                </div>
+                <div class="absolute top-5 right-12 opacity-60">
+                    <i class="fas fa-cloud text-white text-4xl"></i>
+                </div>
+
+                <!-- Ship Crew Casting Rod Animation -->
+                <div class="absolute bottom-10 left-4 sm:left-12 z-10 ship-anim">
+                    <div class="relative w-32 h-36">
+                        <!-- Boat Deck Segment -->
+                        <div class="absolute bottom-0 -left-6 w-44 h-10 bg-amber-900 border-t-4 border-amber-700 rounded-t-lg shadow-md"></div>
+
+                        <svg viewBox="0 0 100 120" class="w-full h-full drop-shadow-md">
+                            <rect x="35" y="60" width="30" height="40" rx="5" fill="#dc2626"/>
+                            <rect x="30" y="60" width="40" height="10" fill="#fef08a"/>
+                            <circle cx="50" cy="38" r="22" fill="#fbcfe8"/>
+                            <!-- Pirate Bandana -->
+                            <path d="M 28 35 Q 50 15 72 35 L 75 28 Q 50 10 25 28 Z" fill="#dc2626"/>
+                            <circle cx="42" cy="36" r="4" fill="#18181b"/>
+                            <line x1="28" y1="28" x2="56" y2="42" stroke="#18181b" stroke-width="2"/>
+                            <circle cx="58" cy="36" r="2.5" fill="#18181b"/>
+                            <path d="M 45 46 Q 52 52 60 45" stroke="#881337" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        </svg>
+
+                        <!-- Animated Rod & Line -->
+                        <div id="fishingRod" class="absolute top-2 left-16 w-40 h-32 pointer-events-none origin-bottom-left transition-transform duration-700">
+                            <svg viewBox="0 0 200 150" class="w-full h-full overflow-visible">
+                                <path d="M 10 100 Q 60 40 160 10" fill="none" stroke="#78350f" stroke-width="5" stroke-linecap="round"/>
+                                <path d="M 10 100 Q 60 40 160 10" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="25" cy="90" r="6" fill="#475569"/>
+                                <path id="svgFishingLine" class="hidden" d="M 160 10 Q 185 80 185 155" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="6,4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sea Water Layer -->
+                <div class="absolute bottom-0 inset-x-0 h-16 sm:h-20 bg-cyan-600 z-20 overflow-hidden">
+                    <svg class="wave absolute top-0 left-0 w-[200%] h-full" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                        <path d="M0,30 C150,90 350,-10 500,30 C650,70 900,10 1200,40 L1200,120 L0,120 Z" fill="#0284c7" opacity="0.7"></path>
+                    </svg>
+                    <svg class="wave-slow absolute top-2 left-0 w-[200%] h-full" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                        <path d="M0,50 C200,10 400,60 600,30 C800,10 1000,50 1200,30 L1200,120 L0,120 Z" fill="#0369a1" opacity="0.9"></path>
+                    </svg>
+
+                    <!-- Water Bobber Floating -->
+                    <div id="waterBobber" class="absolute left-[65%] sm:left-[58%] top-3 hidden z-30 animate-bounce">
+                        <div class="w-5 h-5 bg-red-600 border-2 border-white rounded-full shadow-md relative">
+                            <div class="absolute top-0 inset-x-0 h-2.5 bg-white rounded-t-full"></div>
+                        </div>
+                        <div class="absolute -bottom-1 -left-2 w-9 h-3 border-2 border-cyan-200 rounded-full animate-ping opacity-75"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Box -->
+            <div class="w-full relative">
+                <div id="questionBox" class="parchment p-5 sm:p-7 rounded-3xl relative transition-all duration-300">
+                    
+                    <div class="flex justify-between items-center mb-4 border-b-2 border-amber-800/30 pb-3">
+                        <span id="questionNumBadge" class="bg-amber-900 text-yellow-300 font-title text-xs sm:text-sm px-4 py-1.5 rounded-full border border-amber-600 shadow">
+                            Soalan 1 daripada 5
+                        </span>
+                        <span class="text-amber-900 font-bold text-xs sm:text-sm flex items-center gap-1">
+                            <i class="fas fa-compass text-amber-700"></i> Kata Ganti Nama Diri
+                        </span>
+                    </div>
+
+                    <h2 id="questionText" class="font-title text-lg sm:text-2xl text-amber-950 leading-relaxed mb-6">
+                        Memuat naik soalan...
+                    </h2>
+
+                    <!-- Answer Options Grid -->
+                    <div id="optionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- POPUP 1: CLEAR FISH CATCH CELEBRATION MODAL (SUPER CLEAR VISUAL) -->
+            <div id="catchModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="animate-catch bg-gradient-to-b from-amber-900 via-amber-950 to-amber-900 border-8 border-yellow-400 p-6 sm:p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+                    
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-sky-400/20 rounded-full blur-xl"></div>
+
+                    <div class="inline-block bg-yellow-400 text-amber-950 font-title text-xs sm:text-sm px-4 py-1 rounded-full uppercase tracking-widest shadow-md mb-3 border border-yellow-200">
+                        ✨ TAHNIAH! JAWAPAN TEPAT! ✨
+                    </div>
+
+                    <h3 class="font-title text-2xl sm:text-3xl text-yellow-300 drop-shadow mb-2">
+                        Dapat Ikan Segar! 🐟
+                    </h3>
+
+                    <!-- Clear Large Animated Fish Graphic -->
+                    <div class="my-4 relative flex items-center justify-center py-4 bg-sky-900/50 rounded-2xl border-2 border-yellow-400/40">
+                        <div class="absolute inset-0 flex items-center justify-center opacity-30 animate-spin" style="animation-duration: 12s;">
+                            <i class="fas fa-sun text-yellow-300 text-8xl"></i>
+                        </div>
+                        
+                        <div class="relative z-10 flex flex-col items-center">
+                            <!-- Big Colorful Fish Icon -->
+                            <div class="text-7xl sm:text-8xl text-yellow-400 drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)] transform -rotate-12 hover:rotate-0 transition">
+                                🐟
+                            </div>
+                            <span class="mt-2 bg-amber-900 text-yellow-300 font-title text-sm px-4 py-1 rounded-full border border-yellow-400 shadow">
+                                +1 Seekor Ikan Disimpan!
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="text-amber-100 font-medium text-xs sm:text-sm mb-4">
+                        Syabas! Anak kapal lanun berjaya menaikkan seekor ikan untuk bekalan makanan!
+                    </p>
+
+                    <div class="w-full bg-amber-800/60 rounded-xl p-2 border border-amber-600 text-yellow-200 font-title text-xs flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle text-green-400 text-base"></i>
+                        Menyediakan soalan seterusnya...
+                    </div>
+                </div>
+            </div>
+
+            <!-- POPUP 2: WRONG ANSWER / HINT MODAL -->
+            <div id="wrongModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="animate-shake bg-gradient-to-b from-amber-950 to-amber-900 border-4 border-red-500 p-6 sm:p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative">
+                    
+                    <div class="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mx-auto mb-3 border-4 border-red-300">
+                        <i class="fas fa-times"></i>
+                    </div>
+
+                    <h3 class="font-title text-2xl sm:text-3xl text-red-400 tracking-wider mb-2">
+                        SALAH! CUBA LAGI!
+                    </h3>
+
+                    <!-- Hint Display Box -->
+                    <div class="w-full bg-amber-900/90 border-2 border-yellow-500 p-4 rounded-2xl text-left shadow-inner my-4">
+                        <div class="text-yellow-400 font-title text-xs sm:text-sm mb-1 flex items-center gap-2">
+                            <i class="fas fa-lightbulb text-yellow-300 text-lg animate-pulse"></i> PETUNJUK:
+                        </div>
+                        <div id="hintText" class="text-amber-100 font-hand text-base sm:text-lg">
+                        </div>
+                    </div>
+
+                    <button onclick="closeWrongModal()" class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-amber-950 font-title px-6 py-3 rounded-xl border-2 border-yellow-200 shadow-lg text-sm sm:text-base transition transform active:scale-95 cursor-pointer">
+                        <i class="fas fa-redo mr-2"></i> Cuba Soalan Ini Semula
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3. SCOREBOARD / END SCREEN -->
+        <div id="endScreen" class="w-full hidden flex-col items-center text-center my-auto">
+            <div class="parchment p-6 sm:p-10 rounded-3xl max-w-xl w-full border-8 border-amber-900 shadow-2xl relative overflow-hidden">
+                
+                <div class="inline-block bg-amber-950 text-yellow-400 p-4 rounded-full border-4 border-amber-500 shadow-xl mb-4 animate-bounce">
+                    <i class="fas fa-trophy text-4xl sm:text-5xl"></i>
+                </div>
+
+                <h1 class="font-title text-2xl sm:text-4xl text-amber-950 mb-1 leading-tight">
+                    TAHNIAH!
+                </h1>
+                <p class="font-title text-lg sm:text-2xl text-amber-800 mb-5">
+                    Anda berjaya memancing 5 ekor ikan!
+                </p>
+
+                <div class="bg-amber-900/10 border-2 border-amber-700/40 rounded-2xl p-4 mb-5 flex items-center justify-center gap-4">
+                    <div class="text-amber-800 text-3xl">
+                        <i class="fas fa-ship"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-bold text-amber-950 text-sm sm:text-base">Bekalan Makanan Selamat!</div>
+                        <div class="text-xs text-amber-800">Upin, Ipin dan rakan-rakan tidak lagi kelaparan! Betul, betul, betul!</div>
+                    </div>
+                </div>
+
+                <!-- SECRET NUMBER DISPLAY BOX -->
+                <div class="bg-gradient-to-b from-amber-950 to-amber-900 border-4 border-yellow-400 p-5 rounded-2xl shadow-2xl text-white mb-6">
+                    <div class="font-title text-yellow-400 text-xs sm:text-sm uppercase tracking-widest mb-1">
+                        NOMBOR RAHSIA ANDA!
+                    </div>
+                    <div class="font-title text-6xl sm:text-8xl text-yellow-300 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] my-1">
+                        2
+                    </div>
+                    <div class="text-[11px] text-amber-200">
+                        *Simpan nombor rahsia ini untuk tugasan seterusnya!
+                    </div>
+                </div>
+
+                <button onclick="restartGame()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-title text-base sm:text-lg px-8 py-3.5 rounded-2xl border-4 border-teal-200 shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer">
+                    <i class="fas fa-sync-alt mr-2"></i> Main Semula
+                </button>
+
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="relative z-20 text-center py-2.5 text-amber-950/80 text-xs font-bold bg-amber-200/50 backdrop-blur-sm">
+        Hak Cipta Terpelihara &copy; Modul Memburu Ikan Lanun Bahasa Melayu Upin & Ipin
+    </footer>
+
+    <script>
+        /* QUESTION DATASET */
+        const questionsData = [
+            {
+                id: 1,
+                question: "Ali dan Rahmat baik hati. ______ disukai oleh rakan-rakan.",
+                options: [
+                    { key: "a", text: "Kita" },
+                    { key: "b", text: "Dia" },
+                    { key: "c", text: "Beliau" },
+                    { key: "d", text: "Mereka" }
+                ],
+                correctKey: "d",
+                hint: "Kata ganti nama diri ketiga"
+            },
+            {
+                id: 2,
+                question: "Wahid ponteng sekolah. ______ didenda oleh guru disiplin.",
+                options: [
+                    { key: "a", text: "Saya" },
+                    { key: "b", text: "Dia" },
+                    { key: "c", text: "Aku" },
+                    { key: "d", text: "Mereka" }
+                ],
+                correctKey: "b",
+                hint: "Kata ganti nama diri kedua"
+            },
+            {
+                id: 3,
+                question: "______ ialah negarawan yang terkenal.",
+                options: [
+                    { key: "a", text: "Dia" },
+                    { key: "b", text: "Kamu" },
+                    { key: "c", text: "Beliau" },
+                    { key: "d", text: "Kita" }
+                ],
+                correctKey: "c",
+                hint: "Kata ganti nama diri ketiga"
+            },
+            {
+                id: 4,
+                question: "“______ ingin bersantap,” titah sultan.",
+                options: [
+                    { key: "a", text: "Beta" },
+                    { key: "b", text: "Hamba" },
+                    { key: "c", text: "Patik" },
+                    { key: "d", text: "Tuanku" }
+                ],
+                correctKey: "a",
+                hint: "Kata ganti nama diri pertama"
+            },
+            {
+                id: 5,
+                question: "“______ mohon pertimbangan tuanku,” kata Laksamana Hang Tuah kepada sultan.",
+                options: [
+                    { key: "a", text: "Beta" },
+                    { key: "b", text: "Hamba" },
+                    { key: "c", text: "Aku" },
+                    { key: "d", text: "Saya" }
+                ],
+                correctKey: "b",
+                hint: "Kata ganti nama diri pertama"
+            }
+        ];
+
+        /* STATE VARIABLES */
+        let currentQuestionIndex = 0;
+        let fishCaught = 0;
+        let isBgmPlaying = false;
+        let audioCtx = null;
+        let bgmInterval = null;
+        let isVictoryMode = false;
+
+        /* AUDIO SYNTHESIZER INITIALIZATION */
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        /* WATER SPLASH SOUND EFFECTS */
+        function playSplashSound() {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(280, now);
+            osc.frequency.exponentialRampToValueAtTime(70, now + 0.35);
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+
+        /* CELEBRATION FANFARE & CHEERS */
+        function playCelebrationAudio() {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                gain.gain.setValueAtTime(0, now + idx * 0.08);
+                gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.08 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.35);
+            });
+
+            /* Soft applause noise effect */
+            const bufferSize = audioCtx.sampleRate * 1.0;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1200, now);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.15, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+
+            noise.start(now);
+            noise.stop(now + 1.0);
+        }
+
+        /* WRONG ANSWER BUZZER */
+        function playWrongSound() {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(160, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.25);
+        }
+
+        /* SOFT & PLEASANT PIRATE BACKGROUND MUSIC SYNTHESIZER */
+        function startPirateBGM() {
+            if (isBgmPlaying) return;
+            initAudioContext();
+            isBgmPlaying = true;
+            updateBGMButtonUI();
+
+            // Melodic Sea Shanty Melody (For Gameplay)
+            const gentlePirateMelody = [
+                { note: 293.66, dur: 0.25 }, // D4
+                { note: 329.63, dur: 0.25 }, // E4
+                { note: 349.23, dur: 0.50 }, // F4
+                { note: 440.00, dur: 0.25 }, // A4
+                { note: 392.00, dur: 0.25 }, // G4
+                { note: 349.23, dur: 0.50 }, // F4
+                { note: 329.63, dur: 0.25 }, // E4
+                { note: 293.66, dur: 0.50 }, // D4
+                { note: 261.63, dur: 0.25 }, // C4
+                { note: 293.66, dur: 0.75 }  // D4
+            ];
+
+            // Upbeat Victory Celebration Song Melody (For Final Scoreboard)
+            const victoryCelebrationMelody = [
+                { note: 523.25, dur: 0.2 }, // C5
+                { note: 659.25, dur: 0.2 }, // E5
+                { note: 783.99, dur: 0.2 }, // G5
+                { note: 1046.50, dur: 0.4 }, // C6
+                { note: 880.00, dur: 0.2 }, // A5
+                { note: 1046.50, dur: 0.6 }, // C6
+                { note: 783.99, dur: 0.2 }, // G5
+                { note: 880.00, dur: 0.2 }, // A5
+                { note: 987.77, dur: 0.2 }, // B5
+                { note: 1046.50, dur: 0.6 }  // C6
+            ];
+
+            let noteIndex = 0;
+
+            bgmInterval = setInterval(() => {
+                if (!isBgmPlaying || !audioCtx) return;
+
+                const currentMelody = isVictoryMode ? victoryCelebrationMelody : gentlePirateMelody;
+                const item = currentMelody[noteIndex];
+                noteIndex = (noteIndex + 1) % currentMelody.length;
+
+                const now = audioCtx.currentTime;
+
+                if (item.note > 0) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = isVictoryMode ? 'triangle' : 'triangle';
+                    osc.frequency.setValueAtTime(item.note, now);
+
+                    const vol = isVictoryMode ? 0.08 : 0.05;
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime(vol, now + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + item.dur);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + item.dur);
+                }
+
+            }, isVictoryMode ? 240 : 320);
+        }
+
+        function playVictoryBGM() {
+            stopPirateBGM();
+            isVictoryMode = true;
+            startPirateBGM();
+        }
+
+        function stopPirateBGM() {
+            isBgmPlaying = false;
+            if (bgmInterval) clearInterval(bgmInterval);
+            updateBGMButtonUI();
+        }
+
+        function toggleBGM() {
+            initAudioContext();
+            if (isBgmPlaying) {
+                stopPirateBGM();
+            } else {
+                startPirateBGM();
+            }
+        }
+
+        function updateBGMButtonUI() {
+            const btnText = document.getElementById('bgmText');
+            const btnIcon = document.getElementById('bgmIcon');
+            if (isBgmPlaying) {
+                btnText.textContent = isVictoryMode ? "Muzik Keraian: AKTIF" : "Muzik Lanun: AKTIF";
+                btnIcon.className = "fas fa-music text-yellow-300 animate-pulse";
+            } else {
+                btnText.textContent = isVictoryMode ? "Muzik Keraian: BISU" : "Muzik Lanun: BISU";
+                btnIcon.className = "fas fa-volume-mute text-slate-400";
+            }
+        }
+
+        /* GAME LOGIC ENGINE */
+        function startGame() {
+            initAudioContext();
+            isVictoryMode = false;
+            stopPirateBGM();
+            startPirateBGM();
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            document.getElementById('gameplayScreen').classList.add('flex');
+
+            currentQuestionIndex = 0;
+            fishCaught = 0;
+            updateFishCounter();
+
+            triggerFishingSequence();
+        }
+
+        function triggerFishingSequence() {
+            document.getElementById('catchModal').classList.add('hidden');
+            document.getElementById('wrongModal').classList.add('hidden');
+            document.getElementById('svgFishingLine').classList.add('hidden');
+            document.getElementById('waterBobber').classList.add('hidden');
+
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.style.pointerEvents = 'none';
+            optionsGrid.style.opacity = '0.5';
+
+            const rod = document.getElementById('fishingRod');
+            rod.style.transform = 'rotate(-25deg)';
+
+            setTimeout(() => {
+                rod.style.transform = 'rotate(15deg)';
+                document.getElementById('svgFishingLine').classList.remove('hidden');
+                document.getElementById('svgFishingLine').classList.add('line-cast');
+
+                setTimeout(() => {
+                    playSplashSound();
+                    document.getElementById('waterBobber').classList.remove('hidden');
+
+                    loadQuestionData();
+                    optionsGrid.style.pointerEvents = 'auto';
+                    optionsGrid.style.opacity = '1';
+
+                }, 500);
+
+            }, 250);
+        }
+
+        function loadQuestionData() {
+            const q = questionsData[currentQuestionIndex];
+
+            document.getElementById('questionNumBadge').textContent = `Soalan ${q.id} daripada 5`;
+            document.getElementById('questionText').textContent = q.question;
+
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "group relative flex items-center p-3.5 sm:p-4 rounded-2xl bg-amber-100/90 hover:bg-amber-200 border-2 border-amber-800/40 hover:border-amber-700 text-left transition transform hover:-translate-y-0.5 active:translate-y-0 shadow cursor-pointer";
+                btn.onclick = () => checkAnswer(opt.key);
+
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-amber-900 text-yellow-300 font-title text-sm flex items-center justify-center mr-3 border border-amber-600 group-hover:scale-110 transition shrink-0">
+                        ${opt.key.toUpperCase()}
+                    </span>
+                    <span class="font-bold text-amber-950 text-sm sm:text-base flex-1">
+                        ${opt.text}
+                    </span>
+                `;
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedKey) {
+            const q = questionsData[currentQuestionIndex];
+
+            if (selectedKey === q.correctKey) {
+                // Show clear catch celebration modal
+                document.getElementById('catchModal').classList.remove('hidden');
+                document.getElementById('waterBobber').classList.add('hidden');
+
+                playCelebrationAudio();
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                fishCaught++;
+                updateFishCounter();
+
+                setTimeout(() => {
+                    document.getElementById('catchModal').classList.add('hidden');
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questionsData.length) {
+                        triggerFishingSequence();
+                    } else {
+                        showScoreboard();
+                    }
+                }, 2200);
+
+            } else {
+                // Show wrong answer modal with hint
+                playWrongSound();
+                document.getElementById('hintText').textContent = q.hint;
+                document.getElementById('wrongModal').classList.remove('hidden');
+            }
+        }
+
+        function closeWrongModal() {
+            document.getElementById('wrongModal').classList.add('hidden');
+        }
+
+        function updateFishCounter() {
+            document.getElementById('fishCount').textContent = fishCaught;
+        }
+
+        function showScoreboard() {
+            document.getElementById('gameplayScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.remove('hidden');
+            document.getElementById('endScreen').classList.add('flex');
+
+            // Switch background music to triumphant celebration song
+            playVictoryBGM();
+
+            // Continuous victory confetti burst
+            const duration = 3 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            })();
+        }
+
+        function restartGame() {
+            startGame();
+        }
+    </script>
+</body>
+</html>
